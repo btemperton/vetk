@@ -1,0 +1,3 @@
+include README.rst
+include tests/testfiles/*.fna
+include tests/testfiles/*.faa
