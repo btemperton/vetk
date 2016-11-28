@@ -15,7 +15,7 @@ setup(name='ViralEcologyToolkit',
       license='MIT',
       packages=['ViralEcologyToolkit'],
       entry_points={
-          'console_scripts': ['create_reticulate_network=ReticulateNetwork.command_line:main'],
+          'console_scripts': ['vetk=ViralEcologyToolkit.command_line:main'],
       },
       install_requires=['numpy', 'pandas', 'scipy', 'biopython', 'rpy2'],
       zip_safe=False)

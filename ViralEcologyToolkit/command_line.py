@@ -1,30 +1,56 @@
 import argparse
+
 import logging
 
-import ViralEcologyToolkit
+logger = logging.getLogger('vetk')
 
 
-def main(args):
+def run_subtool(parser, args):
+    if args.command == 'reticulator':
+        import ViralEcologyToolkit.reticulator as submodule
+    elif args.command == 'coverage':
+        import ViralEcologyToolkit.coverage as submodule
+
+    submodule.run(parser, args)
+
+
+class ArgumentParserWithDefaults(argparse.ArgumentParser):
+    def __init__(self, *args, **kwargs):
+        super(ArgumentParserWithDefaults, self).__init__(*args, **kwargs)
+        self.add_argument("-q", "--quiet", help="Do not output warnings to stderr",
+                          action="store_true",
+                          dest="quiet")
+
+
+def main():
     logging.basicConfig()
-    logger = logging.getLogger('extract.signal.peptides.py.logger')
+    parser = argparse.ArgumentParser(prog='vetk', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    subparsers = parser.add_subparsers(title='[sub-commands]', dest='command', parser_class=ArgumentParserWithDefaults)
 
-    s = ViralEcologyToolkit.parse_mcl_dump_file(args.mcl_dump)
-    s.to_csv('~/Downloads/s.csv')
-    t = ViralEcologyToolkit.load_gene_map(args.gene_map)
-    t.to_csv('~/Downloads/t.csv')
-    u = ViralEcologyToolkit.add_pc_labels(s, t)
-    u.to_csv('~/Downloads/u.csv')
-    v = ViralEcologyToolkit.create_composition_mtx(u, presence_absence=True)
-    v.to_csv('~/Downloads/v.csv')
-    w = ViralEcologyToolkit.calculate_shared_matrix(v)
-    w.to_csv('~/Downloads/w.csv')
-    x = ViralEcologyToolkit.calculate_hypergeometric_survival(u, w)
-    x.to_csv('~/Downloads/x.csv')
+    parser_coverage = subparsers.add_parser('coverage')
+    parser_coverage.add_argument('--bam_file', dest='bam_file', metavar='STRING', required=True)
+    parser_coverage.add_argument('--out_file', dest='out_file', metavar='STRING', required=True)
+    parser_coverage.add_argument('-pct_id', dest='pct_id', type=float, default=90.0)
+
+    parser_coverage.set_defaults(func=run_subtool)
+
+    parser_reticulator = subparsers.add_parser('reticulator')
+    parser_reticulator.add_argument('--mcl_dump', dest='mcl_dump', metavar='STRING', required=True)
+    parser_reticulator.add_argument('--gene_map', dest='gene_map', metavar='STRING', required=True)
+    parser_reticulator.add_argument('--output', dest='output', metavar='STRING', required=True)
+    parser_reticulator.set_defaults(func=run_subtool)
+
+    args = parser.parse_args()
+
+    if args.quiet:
+        logger.setLevel(logging.ERROR)
+
+    try:
+        args.func(parser, args)
+    except IOError as e:
+        if e.errno != 32:  # ignore SIGPIPE
+            raise
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--mcl_dump', type=str, required=True)
-    parser.add_argument('--gene_map', type=str, required=True)
-    args = parser.parse_args()
-    main(args)
+    main()

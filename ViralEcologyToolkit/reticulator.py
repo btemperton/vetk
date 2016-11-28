@@ -12,6 +12,26 @@ from Bio import SeqIO
 logger = logging.getLogger(__name__)
 
 
+def run(parser, args):
+    """
+    Generate a network from an MCL file of clustered proteins by
+    guilt-by-association, as described in Lima-Mendez
+    :param parser:
+    :param args:
+    :return:
+    """
+    s = parse_mcl_dump_file(args.mcl_dump)
+    t = load_gene_map(args.gene_map)
+    u = add_pc_labels(s, t)
+    v = create_composition_mtx(u, presence_absence=True)
+    w = calculate_shared_matrix(v)
+    x = calculate_hypergeometric_survival(u, w)
+    x.to_csv(args.output)
+    return x
+
+
+
+
 def extract_fastas_from_list(fasta_file, id_list, list_file=True):
     """
     Given a list of ids, and a fasta file (can be zipped)
